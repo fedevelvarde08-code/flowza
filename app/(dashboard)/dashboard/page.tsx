@@ -512,10 +512,10 @@ const collectedPct =
                     const waLink = buildWhatsAppLink(
                       lead.phone,
                      buildLeadWhatsAppMessage(
-  lead.name,
-  lead.service_interested ?? 'our service',
-  businessName
-)
+                    lead.name,
+                   lead.service_interested ?? 'our service',
+                   businessName
+                     )
                     )
                     return (
                       <tr

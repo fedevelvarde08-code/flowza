@@ -15,9 +15,15 @@ export function buildWhatsAppLink(phone: string, message: string): string {
   return `https://wa.me/${cleaned}?text=${encoded}`
 }
 
-export function buildLeadWhatsAppMessage(name: string, service: string): string {
-  return `Hi ${name}, this is from Flowza. Thank you for your enquiry about ${service}. Would you like to continue with the next step?`
+export function buildLeadWhatsAppMessage(
+  name: string,
+  service: string,
+  businessName: string
+) {
+  return `Hi ${name}, this is from ${businessName}. Thank you for your enquiry about ${service}. Would you like to schedule a quick call or visit to discuss the next step?`
 }
+
+ 
 
 export function buildPaymentWhatsAppMessage(name: string, pendingAmount: number): string {
   return `Hi ${name}, this is a reminder that ₹${pendingAmount.toLocaleString('en-IN')} is pending. Kindly complete the payment.`

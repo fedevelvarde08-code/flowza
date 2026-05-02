@@ -43,8 +43,8 @@ interface CustomerMini {
   } | null
 }
 
-interface PaymentRow extends Payment {
-  customer?: CustomerMini | null
+type PaymentRow = Payment & {
+  customer: CustomerMini | null
 }
 
 function formatINR(n: number) {
@@ -119,7 +119,7 @@ export default function PaymentsPage() {
     if (batchesRes.error) console.error('fetchBatches:', batchesRes.error.message)
 
     setPayments((paymentsRes.data ?? []) as PaymentRow[])
-    setCustomers((customersRes.data ?? []) as CustomerMini[])
+    setCustomers((customersRes.data ?? []) as unknown as CustomerMini[])
     setBranches((branchesRes.data ?? []) as Branch[])
     setBatches((batchesRes.data ?? []) as Batch[])
 

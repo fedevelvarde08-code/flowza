@@ -76,27 +76,60 @@ export default function FollowupsPage() {
 
         <div className="card overflow-hidden">
           <table className="w-full">
-            <tbody>
-              {followupLeads.map((lead) => {
-                const msg = buildLeadWhatsAppMessage(
-                  lead.name,
-                  lead.service_interested ?? 'our service',
-                  businessName // ✅ FIXED
-                )
+  <thead>
+    <tr className="border-b border-white/5">
+      <th className="table-th">Name</th>
+      <th className="table-th hidden md:table-cell">Service</th>
+      <th className="table-th hidden md:table-cell">Source</th>
+      <th className="table-th">Status</th>
+      <th className="table-th text-right">WhatsApp</th>
+    </tr>
+  </thead>
 
-                return (
-                  <tr key={lead.id}>
-                    <td>{lead.name}</td>
-                    <td>
-                      <a href={buildWhatsAppLink(lead.phone, msg)} target="_blank">
-                        WhatsApp
-                      </a>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+  <tbody>
+    {followupLeads.map((lead) => {
+      const msg = buildLeadWhatsAppMessage(
+        lead.name,
+        lead.service_interested ?? 'our service',
+        businessName
+      )
+
+      return (
+        <tr key={lead.id} className="table-row">
+          <td className="table-td">
+            <p className="font-medium text-white">{lead.name}</p>
+            <p className="text-xs text-slate-500">{lead.phone}</p>
+          </td>
+
+          <td className="table-td hidden md:table-cell text-slate-400">
+            {lead.service_interested || '—'}
+          </td>
+
+          <td className="table-td hidden md:table-cell text-slate-400">
+            {lead.source || '—'}
+          </td>
+
+          <td className="table-td">
+            <Badge status={lead.status} />
+          </td>
+
+          <td className="table-td">
+            <div className="flex justify-end">
+              <a
+                href={buildWhatsAppLink(lead.phone, msg)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 text-xs font-medium rounded-lg border border-emerald-500/20 transition-colors"
+              >
+                <MessageCircle size={13} /> WhatsApp
+              </a>
+            </div>
+          </td>
+        </tr>
+      )
+    })}
+  </tbody>
+</table>
         </div>
       </div>
 

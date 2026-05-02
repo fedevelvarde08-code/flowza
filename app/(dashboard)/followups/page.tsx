@@ -16,7 +16,7 @@ export default function FollowupsPage() {
   const [followupLeads, setFollowupLeads] = useState<Lead[]>([])
   const [pendingCustomers, setPendingCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(true)
-
+  const [businessName, setBusinessName] = useState('Flowza')
   useEffect(() => {
     async function fetchData() {
       const [leadsRes, customersRes] = await Promise.all([
@@ -77,7 +77,11 @@ export default function FollowupsPage() {
                 </tr>
               ) : (
                 followupLeads.map((lead) => {
-                  const msg = buildLeadWhatsAppMessage(lead.name, lead.service_interested ?? 'our service')
+                  const msg = buildLeadWhatsAppMessage(
+  lead.name,
+  lead.service_interested ?? 'our service',
+  businessName
+)
                   return (
                     <tr key={lead.id} className="table-row">
                       <td className="table-td">

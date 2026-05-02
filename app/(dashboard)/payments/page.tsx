@@ -119,7 +119,7 @@ export default function PaymentsPage() {
     if (batchesRes.error) console.error('fetchBatches:', batchesRes.error.message)
 
     setPayments((paymentsRes.data ?? []) as PaymentRow[])
-    setCustomers((customersRes.data ?? []) as unknown as CustomerMini[])
+    setCustomers((customersRes.data ?? []) as any)
     setBranches((branchesRes.data ?? []) as Branch[])
     setBatches((batchesRes.data ?? []) as Batch[])
 

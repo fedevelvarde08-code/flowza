@@ -1,0 +1,124 @@
+{
+  "name": "Flowza - Webhook Lead Capture",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "flowza-lead",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "flowza-lead-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validate and clean incoming lead data\nconst body = $input.first().json.body || $input.first().json;\n\nconst validStatuses = ['New', 'Contacted', 'Follow-up', 'Converted', 'Lost'];\n\nreturn [{\n  json: {\n    name: body.name || 'Unknown',\n    phone: (body.phone || '').toString().replace(/\\D/g, ''),\n    business_type: body.business_type || '',\n    service_interested: body.service_interested || '',\n    source: body.source || 'Webhook',\n    status: validStatuses.includes(body.status) ? body.status : 'New',\n    notes: body.notes || `Lead captured via webhook on ${new Date().toISOString()}`\n  }\n}];"
+      },
+      "id": "code-transform",
+      "name": "Transform Lead Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/leads",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_ANON_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": []
+        },
+        "bodyContentType": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "supabase-insert",
+      "name": "Insert Lead to Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"success\": true, \"message\": \"Lead created\", \"data\": {{ JSON.stringify($json) }}}",
+        "options": {
+          "responseCode": 201
+        }
+      },
+      "id": "respond-success",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 240]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"success\": false, \"error\": \"Failed to create lead\"}",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "id": "respond-error",
+      "name": "Respond Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 380]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [{ "node": "Transform Lead Data", "type": "main", "index": 0 }]
+      ]
+    },
+    "Transform Lead Data": {
+      "main": [
+        [{ "node": "Insert Lead to Supabase", "type": "main", "index": 0 }]
+      ]
+    },
+    "Insert Lead to Supabase": {
+      "main": [
+        [{ "node": "Respond Success", "type": "main", "index": 0 }],
+        [{ "node": "Respond Error", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "_comment": "HOW TO USE: 1) Import this JSON in n8n (Workflows > Import). 2) Set env vars SUPABASE_URL and SUPABASE_ANON_KEY in n8n. 3) Activate workflow and copy the webhook URL. 4) Send POST request with lead data: { name, phone, business_type, service_interested, source, notes }"
+}

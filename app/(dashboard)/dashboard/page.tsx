@@ -515,7 +515,7 @@ const collectedPct =
                     lead.name,
                    lead.service_interested ?? 'our service',
                    businessName
-                     )
+                 )
                     )
                     return (
                       <tr

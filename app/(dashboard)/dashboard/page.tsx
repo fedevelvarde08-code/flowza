@@ -511,7 +511,11 @@ const collectedPct =
                   recentLeads.map((lead) => {
                     const waLink = buildWhatsAppLink(
                       lead.phone,
-                      buildLeadWhatsAppMessage(lead.name, lead.service_interested ?? 'our service')
+                     buildLeadWhatsAppMessage(
+  lead.name,
+  lead.service_interested ?? 'our service',
+  businessName
+)
                     )
                     return (
                       <tr

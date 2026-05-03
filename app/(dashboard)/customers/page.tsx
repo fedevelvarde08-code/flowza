@@ -14,6 +14,7 @@ interface Batch {
   id: string
   name: string
   branch_id: string
+  default_fee: number
 }
 
 interface Branch {
@@ -96,7 +97,7 @@ export default function CustomersPage() {
 
       supabase
         .from('batches')
-        .select('id, name, branch_id')
+        .select('id, name, branch_id, default_fee')
         .eq('business_id', bizId)
         .order('name'),
 
@@ -501,7 +502,19 @@ export default function CustomersPage() {
               <label className="block text-sm text-slate-400 mb-1">Batch</label>
               <select
                 value={form.batch_id}
-                onChange={(e) => setForm({ ...form, batch_id: e.target.value })}
+                onChange={(e) => {
+  const batchId = e.target.value
+  const selected = batches.find((b) => b.id === batchId)
+
+  setForm({
+    ...form,
+    batch_id: batchId,
+    total_amount:
+      selected?.default_fee != null
+        ? String(selected.default_fee)
+        : form.total_amount,
+  })
+}}
                 className="w-full px-3 py-2.5 rounded-lg bg-[#0f1117] border border-white/10 text-white text-sm"
               >
                 <option value="" className="bg-[#0f1117] text-white">

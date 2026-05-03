@@ -65,10 +65,12 @@ export default function PaymentsPage() {
   const [payments, setPayments] = useState<PaymentRow[]>([])
   const [customers, setCustomers] = useState<CustomerMini[]>([])
   const [branches, setBranches] = useState<Branch[]>([])
-  const [batches, setBatches] = useState<Batch[]>([])
+const [batches, setBatches] = useState<Batch[]>([])
+const [selectedBranch, setSelectedBranch] = useState('')
+const [selectedBatch, setSelectedBatch] = useState('')
+ 
 
-  const [selectedBranch, setSelectedBranch] = useState('')
-  const [selectedBatch, setSelectedBatch] = useState('')
+  
 
   const [loading, setLoading] = useState(true)
   const [bizError, setBizError] = useState<string | null>(null)
@@ -152,16 +154,39 @@ export default function PaymentsPage() {
     ? batches.filter((b) => b.branch_id === selectedBranch)
     : batches
 
-  const filteredCustomers = customers.filter((c) => {
-    const matchesBatch = !selectedBatch || c.batch_id === selectedBatch
+const filteredCustomers = customers.filter((c) => {
+  const customerBatch = batches.find((b) => b.id === c.batch_id)
 
-    const matchesBranch =
-      !selectedBranch ||
-      filteredBatches.some((b) => b.id === c.batch_id)
+  if (selectedBranch && customerBatch?.branch_id !== selectedBranch) {
+    return false
+  }
 
-    return matchesBatch && matchesBranch
-  })
+  if (selectedBatch && c.batch_id !== selectedBatch) {
+    return false
+  }
 
+  return true
+})
+useEffect(() => {
+  const selectedCustomer = customers.find(
+    (c) => c.id === form.customer_id
+  )
+
+  if (selectedCustomer) {
+    let amountToFill = ''
+
+    if (selectedCustomer.payment_status === 'Paid') {
+      amountToFill = ''
+    } else {
+      amountToFill = String(selectedCustomer.pending_amount || '')
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      amount: amountToFill,
+    }))
+  }
+}, [form.customer_id, customers])
   const filteredPayments = payments.filter((p) => {
     const customer = p.customer
 
@@ -416,6 +441,40 @@ export default function PaymentsPage() {
           onClose={() => setShowModal(false)}
         >
           <div className="flex flex-col gap-4">
+           <div className="grid grid-cols-2 gap-4 mb-4">
+<select
+  value={selectedBranch}
+  onChange={(e) => {
+    setSelectedBranch(e.target.value)
+    setSelectedBatch('')
+    setForm({ ...form, customer_id: '' })
+  }}
+  className="w-full px-3 py-2 rounded-lg bg-[#0f1117] border border-white/10 text-white text-sm appearance-none"
+>
+  <option value="" className="bg-[#0f1117] text-white">All Branches</option>
+  {branches.map((b) => (
+    <option key={b.id} value={b.id} className="bg-[#0f1117] text-white">
+      {b.name}
+    </option>
+  ))}
+</select>
+
+  <select
+  value={selectedBatch}
+  onChange={(e) => {
+    setSelectedBatch(e.target.value)
+    setForm({ ...form, customer_id: '' })
+  }}
+  className="w-full px-3 py-2 rounded-lg bg-[#0f1117] border border-white/10 text-white text-sm appearance-none"
+>
+  <option value="" className="bg-[#0f1117] text-white">All Batches</option>
+  {filteredBatches.map((b) => (
+    <option key={b.id} value={b.id} className="bg-[#0f1117] text-white">
+      {b.name}
+    </option>
+  ))}
+</select>
+</div>
             <Select
               label="Customer *"
               value={form.customer_id}

@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   UserPlus,
   Users,
-  CreditCard,
   Bell,
   Settings,
   Zap
@@ -19,7 +18,6 @@ const navItems = [
   { href: '/customers', label: 'Customers', icon: Users },
   { href: '/branches', label: 'Branches', icon: Users },
   { href: '/batches', label: 'Batches', icon: UserPlus },
-  { href: '/payments', label: 'Payments', icon: CreditCard },
   { href: '/followups', label: 'Follow-ups', icon: Bell },
   { href: '/settings', label: 'Settings', icon: Settings },
 ]

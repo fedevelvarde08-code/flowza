@@ -334,40 +334,49 @@ export default function CustomersPage() {
         />
       </div>
 
-      <select
-        value={selectedBranch}
-        onChange={(e) => {
-          setSelectedBranch(e.target.value)
-          setSelectedBatch('')
-        }}
-        className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm"
-      >
-        <option value="">All Branches</option>
-        {branches.map((b) => (
-          <option key={b.id} value={b.id}>{b.name}</option>
-        ))}
-      </select>
+    <select
+  value={selectedBranch}
+  onChange={(e) => {
+    setSelectedBranch(e.target.value)
+    setSelectedBatch('')
+  }}
+  className="px-3 py-2 rounded-lg bg-[#0f1117] border border-white/10 text-white text-sm"
+>
+  <option value="" className="bg-[#0f1117] text-white">
+    All Branches
+  </option>
+  {branches.map((b) => (
+    <option key={b.id} value={b.id} className="bg-[#0f1117] text-white">
+      {b.name}
+    </option>
+  ))}
+</select>
 
-      <select
-        value={selectedBatch}
-        onChange={(e) => setSelectedBatch(e.target.value)}
-        className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm"
-      >
-        <option value="">All Batches</option>
-        {filteredBatches.map((b) => (
-          <option key={b.id} value={b.id}>{b.name}</option>
-        ))}
-      </select>
-
-      <select
-        value={filterStatus}
-        onChange={(e) => setFilterStatus(e.target.value)}
-        className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm"
-      >
-        {filterOptions.map((o) => (
-          <option key={o.value} value={o.value}>{o.label}</option>
-        ))}
-      </select>
+    <select
+  value={selectedBatch}
+  onChange={(e) => setSelectedBatch(e.target.value)}
+  className="px-3 py-2 rounded-lg bg-[#0f1117] border border-white/10 text-white text-sm"
+>
+  <option value="" className="bg-[#0f1117] text-white">
+    All Batches
+  </option>
+  {filteredBatches.map((b) => (
+    <option key={b.id} value={b.id} className="bg-[#0f1117] text-white">
+      {b.name}
+    </option>
+  ))}
+</select>
+   <select
+   value={filterStatus}
+  onChange={(e) => setFilterStatus(e.target.value)}
+  className="px-3 py-2 rounded-lg bg-[#0f1117] border border-white/10 text-white text-sm focus:outline-none appearance-none"
+>
+  {filterOptions.map((o) => (
+    <option key={o.value} value={o.value} className="bg-[#0f1117] text-white">
+      {o.label}
+    </option>
+  ))}
+</select>
     </div>
 
     {/* TABLE (unchanged) */}

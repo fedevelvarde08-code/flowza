@@ -415,15 +415,22 @@ export default function CustomersPage() {
                     <Badge status={c.payment_status} />
                   </td>
 
-                  <td className="table-td text-right">
-                   <button
-  type="button"
-  onClick={() => openEdit(c)}
-  className="p-1.5 text-slate-500 hover:text-white"
->
-  <Pencil size={14} />
-</button>
-                  </td>
+                 <td className="table-td text-right">
+  <button
+    type="button"
+    onClick={() => openEdit(c)}
+    className="p-1.5 text-slate-500 hover:text-white"
+  >
+    <Pencil size={14} />
+  </button>
+
+  <button
+    onClick={() => handleDeleteCustomer(c)}
+    className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg"
+  >
+    <Trash2 size={14} />
+  </button>
+</td>
                 </tr>
               )
             })

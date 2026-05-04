@@ -240,42 +240,49 @@ export default function LeadsPage() {
     fetchLeads()
   }
 
-  async function handleConvert(lead: Lead) {
-    const bizId = businessIdRef.current
-    if (!bizId) return
+async function handleConvert(lead: Lead) {
+  const bizId = businessIdRef.current
+  if (!bizId) return
 
-    const { error } = await supabase
-      .from('customers')
-      .insert([
-        {
-          business_id: bizId,
-          lead_id: lead.id,
-          name: lead.name,
-          phone: lead.phone,
-          business_type: lead.business_type ?? '',
-          service_taken: lead.service_interested ?? '',
-          joining_date: new Date().toISOString().split('T')[0],
-          total_amount: 0,
-          amount_paid: 0,
-          payment_status: 'Due',
-        },
-      ])
+  // 1. Create customer
+  const { error: customerError } = await supabase
+    .from('customers')
+    .insert([
+     {
+  business_id: bizId,
+  name: lead.name,
+  phone: lead.phone,
+  business_type: lead.business_type ?? '',
+  service_taken: lead.service_interested ?? '',
+  joining_date: new Date().toISOString().split('T')[0],
+  total_amount: 0,
+  amount_paid: 0,
+  payment_status: 'Due',
+  batch_id: null,
+}
+    ])
 
-    if (error) {
-      alert(`Convert failed: ${error.message}`)
-      return
-    }
-
-    await supabase
-      .from('leads')
-      .update({ status: 'Converted' })
-      .eq('id', lead.id)
-      .eq('business_id', bizId)
-
-    setConvertId(null)
-    fetchLeads()
+  if (customerError) {
+    alert(`Customer creation failed: ${customerError.message}`)
+    return
   }
 
+  // 2. Update lead → Converted
+  const { error: leadError } = await supabase
+    .from('leads')
+    .update({ status: 'Converted' })
+    .eq('id', lead.id)
+    .eq('business_id', bizId)
+
+  if (leadError) {
+    alert(`Lead update failed: ${leadError.message}`)
+    return
+  }
+
+  // 3. Refresh UI
+  setConvertId(null)
+  fetchLeads()
+}
   if (bizError) {
     return (
       <div className="p-8">

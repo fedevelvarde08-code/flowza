@@ -166,76 +166,85 @@ export default function CustomersPage() {
   const partialCustomers = filtered.filter((c) => c.payment_status === 'Partial').length
   const dueCustomers = filtered.filter((c) => c.payment_status === 'Due').length
 
-  function openEdit(c: CustomerRow) {
-    const customerBatch = batches.find((b) => b.id === c.batch_id)
-    setFormBranchId(customerBatch?.branch_id || '')
+ function openEdit(c: CustomerRow) {
+  console.log('EDIT CLICKED:', c)
 
-    setEditingCustomer(c)
-    setForm({
-      name: c.name,
-      phone: c.phone,
-      business_type: c.business_type ?? '',
-      service_taken: c.service_taken ?? '',
-      joining_date: c.joining_date,
-      total_amount: String(c.total_amount ?? 0),
-      amount_paid: String(c.amount_paid ?? 0),
-      batch_id: c.batch_id ?? '',
-    })
-    setFormError(null)
-    setShowModal(true)
-  }
+  const customerBatch = batches.find((b) => b.id === c.batch_id)
+
+  setFormBranchId(customerBatch?.branch_id || '')
+
+  setEditingCustomer(c)
+
+  setForm({
+    name: c.name || '',
+    phone: c.phone || '',
+    business_type: c.business_type || '',
+    service_taken: c.service_taken || '',
+    joining_date: c.joining_date || '',
+    total_amount: String(c.total_amount || 0),
+    amount_paid: String(c.amount_paid || 0),
+    batch_id: c.batch_id || '',
+  })
+
+  setFormError(null)
+
+  // 🔥 THIS IS THE IMPORTANT LINE
+  setShowModal(true)
+}
 
   async function handleSave() {
-    if (!editingCustomer) return
+  if (!editingCustomer) return
 
-    setFormError(null)
+  setFormError(null)
 
-    const bizId = businessIdRef.current
-    if (!bizId) {
-      setFormError('Business not loaded. Please refresh.')
-      return
-    }
-
-    if (!form.name || !form.phone) {
-      setFormError('Name and phone are required.')
-      return
-    }
-
-    setSaving(true)
-
-    const total = parseFloat(form.total_amount) || 0
-    const paid = parseFloat(form.amount_paid) || 0
-    const pending = Math.max(total - paid, 0)
-
-    const status: PaymentStatus =
-      pending === 0 && total > 0 ? 'Paid' : paid > 0 ? 'Partial' : 'Due'
-
-    const { error } = await supabase
-      .from('customers')
-      .update({
-        name: form.name,
-        phone: form.phone,
-        business_type: form.business_type,
-        service_taken: form.service_taken,
-        joining_date: form.joining_date,
-        total_amount: total,
-        amount_paid: paid,
-        payment_status: status,
-        batch_id: form.batch_id || null,
-      })
-      .eq('id', editingCustomer.id)
-      .eq('business_id', bizId)
-
-    if (error) {
-      setFormError(`Update failed: ${error.message}`)
-      setSaving(false)
-      return
-    }
-
-    setSaving(false)
-    setShowModal(false)
-    fetchData()
+  const bizId = businessIdRef.current
+  if (!bizId) {
+    setFormError('Business not loaded. Please refresh.')
+    return
   }
+
+  if (!form.name || !form.phone) {
+    setFormError('Name and phone are required.')
+    return
+  }
+
+  setSaving(true)
+
+  const total = parseFloat(form.total_amount) || 0
+  const paid = parseFloat(form.amount_paid) || 0
+  const pending = Math.max(total - paid, 0)
+
+  const status: PaymentStatus =
+    pending === 0 && total > 0 ? 'Paid' : paid > 0 ? 'Partial' : 'Due'
+
+  const { error } = await supabase
+    .from('customers')
+    .update({
+      name: form.name,
+      phone: form.phone,
+      business_type: form.business_type || '',
+      service_taken: form.service_taken || '',
+      joining_date: form.joining_date || new Date().toISOString().split('T')[0],
+      total_amount: total,
+      amount_paid: paid,
+      payment_status: status,
+      batch_id: form.batch_id || null,
+    })
+    .eq('id', editingCustomer.id)
+    .eq('business_id', bizId)
+
+  if (error) {
+    console.error('CUSTOMER UPDATE ERROR:', error)
+    alert(error.message)
+    setFormError(`Update failed: ${error.message}`)
+    setSaving(false)
+    return
+  }
+
+  setSaving(false)
+  setShowModal(false)
+  fetchData()
+}
 
   async function handleDeleteCustomer(c: CustomerRow) {
     if (!confirm(`Delete ${c.name}?`)) return
@@ -407,9 +416,13 @@ export default function CustomersPage() {
                   </td>
 
                   <td className="table-td text-right">
-                    <button onClick={() => openEdit(c)}>
-                      <Pencil size={14} />
-                    </button>
+                   <button
+  type="button"
+  onClick={() => openEdit(c)}
+  className="p-1.5 text-slate-500 hover:text-white"
+>
+  <Pencil size={14} />
+</button>
                   </td>
                 </tr>
               )
@@ -418,6 +431,86 @@ export default function CustomersPage() {
         </tbody>
       </table>
     </div>
+  {showModal && (
+  <Modal
+    title="Edit Customer"
+    onClose={() => setShowModal(false)}
+    size="lg"
+  >
+   <div className="grid grid-cols-2 gap-4">
+  <Input label="Name *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+  <Input label="Phone *" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+  <Input label="Business Type" value={form.business_type} onChange={(e) => setForm({ ...form, business_type: e.target.value })} />
+  <Input label="Service Taken" value={form.service_taken} onChange={(e) => setForm({ ...form, service_taken: e.target.value })} />
+  <Input label="Joining Date" type="date" value={form.joining_date} onChange={(e) => setForm({ ...form, joining_date: e.target.value })} />
+
+  <div>
+    <label className="block text-sm text-slate-400 mb-1">Branch</label>
+    <select
+      value={formBranchId}
+      onChange={(e) => {
+        setFormBranchId(e.target.value)
+        setForm({ ...form, batch_id: '' })
+      }}
+      className="w-full px-3 py-2.5 rounded-lg bg-[#0f1117] border border-white/10 text-white text-sm"
+    >
+      <option value="" className="bg-[#0f1117] text-white">Select branch</option>
+      {branches.map((b) => (
+        <option key={b.id} value={b.id} className="bg-[#0f1117] text-white">
+          {b.name}
+        </option>
+      ))}
+    </select>
+  </div>
+
+  <div>
+    <label className="block text-sm text-slate-400 mb-1">Batch</label>
+    <select
+      value={form.batch_id}
+      onChange={(e) => {
+        const batchId = e.target.value
+        const selected = batches.find((b) => b.id === batchId)
+
+        setForm({
+          ...form,
+          batch_id: batchId,
+          total_amount:
+            selected?.default_fee != null
+              ? String(selected.default_fee)
+              : form.total_amount,
+        })
+      }}
+      className="w-full px-3 py-2.5 rounded-lg bg-[#0f1117] border border-white/10 text-white text-sm"
+    >
+      <option value="" className="bg-[#0f1117] text-white">Select batch</option>
+      {formFilteredBatches.map((b) => (
+        <option key={b.id} value={b.id} className="bg-[#0f1117] text-white">
+          {b.name}
+        </option>
+      ))}
+    </select>
+  </div>
+
+  <Input label="Total Amount" type="number" value={form.total_amount} onChange={(e) => setForm({ ...form, total_amount: e.target.value })} />
+  <Input label="Amount Paid" type="number" value={form.amount_paid} onChange={(e) => setForm({ ...form, amount_paid: e.target.value })} />
+
+  {formError && (
+    <div className="col-span-2 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20">
+      <p className="text-sm text-rose-400">{formError}</p>
+    </div>
+  )}
+</div>
+
+<div className="flex justify-end gap-3 mt-6 pt-4 border-t border-white/5">
+  <Button variant="secondary" onClick={() => setShowModal(false)}>
+    Cancel
+  </Button>
+  <Button onClick={handleSave} loading={saving}>
+    Save Changes
+  </Button>
+</div>
+  </Modal>
+)}
   </div>
 )
 }

@@ -250,6 +250,7 @@ async function handleConvert(lead: Lead) {
     .insert([
      {
   business_id: bizId,
+  lead_id: lead.id,
   name: lead.name,
   phone: lead.phone,
   business_type: lead.business_type ?? '',

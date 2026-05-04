@@ -246,25 +246,38 @@ export default function CustomersPage() {
   fetchData()
 }
 
-  async function handleDeleteCustomer(c: CustomerRow) {
-    if (!confirm(`Delete ${c.name}?`)) return
+ async function handleDeleteCustomer(c: CustomerRow) {
+  if (!confirm(`Delete ${c.name}?`)) return
 
-    const bizId = businessIdRef.current
-    if (!bizId) return
+  const bizId = businessIdRef.current
+  if (!bizId) return
 
-    const { error } = await supabase
-      .from('customers')
-      .delete()
-      .eq('id', c.id)
+  if (c.lead_id) {
+    const { error: leadError } = await supabase
+      .from('leads')
+      .update({ status: 'New' })
+      .eq('id', c.lead_id)
       .eq('business_id', bizId)
 
-    if (error) {
-      alert(error.message)
+    if (leadError) {
+      alert(leadError.message)
       return
     }
-
-    fetchData()
   }
+
+  const { error } = await supabase
+    .from('customers')
+    .delete()
+    .eq('id', c.id)
+    .eq('business_id', bizId)
+
+  if (error) {
+    alert(error.message)
+    return
+  }
+
+  fetchData()
+}
 
   if (bizError) {
     return (

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from "next/image"
 import { usePathname } from 'next/navigation'
 import LogoutButton from '@/components/auth/LogoutButton'
 import {
@@ -28,12 +29,20 @@ export default function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 h-full w-60 bg-[#0f1117] border-r border-white/5 flex flex-col z-50">
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-6 py-5 border-b border-white/5">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
-          <Zap size={16} className="text-white" strokeWidth={2.5} />
-        </div>
-        <span className="text-white font-bold text-lg tracking-tight">Flowza</span>
-      </div>
+     
+     <div className="flex items-center gap-0 px-2">
+  <Image
+    src="/logo.png"
+    alt="Flowza"
+    width={100}
+    height={34}
+    className="object-contain"
+  />
+
+  <span className="text-xl font-bold text-white">
+    Flowza
+  </span>
+</div>
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5">

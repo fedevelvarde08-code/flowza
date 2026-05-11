@@ -3,18 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  ArrowDown,
-  ArrowUp,
-  BarChart3,
-  Calendar,
-  ChevronDown,
-  Download,
-  IndianRupee,
-  Info,
-  RefreshCcw,
-  Wallet,
-  Clock3,
-  Percent,
+  ArrowDown, ArrowUp, BarChart3, Calendar, ChevronDown, Download,
+  IndianRupee, Info, RefreshCcw, Wallet, Clock3, Percent,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { getBusinessId } from "@/lib/getBusinessId";
@@ -148,11 +138,7 @@ export default function OverviewPage() {
         })
         .reduce((sum, c) => sum + Number(c.amount_paid || 0), 0);
 
-      return {
-        month,
-        value,
-        active: index === selectedMonth,
-      };
+      return { month, value, active: index === selectedMonth };
     });
 
     return {
@@ -240,9 +226,7 @@ export default function OverviewPage() {
               className="appearance-none rounded-lg border border-slate-800 bg-[#0b111a] py-2 pl-9 pr-8 text-xs outline-none"
             >
               {availableYears.map((year) => (
-                <option key={year} value={year}>
-                  Year {year}
-                </option>
+                <option key={year} value={year}>Year {year}</option>
               ))}
             </select>
             <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -256,9 +240,7 @@ export default function OverviewPage() {
               className="appearance-none rounded-lg border border-slate-800 bg-[#0b111a] py-2 pl-9 pr-8 text-xs outline-none"
             >
               {months.map((month, index) => (
-                <option key={month} value={index}>
-                  Month {month}
-                </option>
+                <option key={month} value={index}>Month {month}</option>
               ))}
             </select>
             <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -317,9 +299,9 @@ function RevenueChart({
   setChartType: (type: "bar" | "table") => void;
   onDownload: () => void;
 }) {
-  const maxValue = Math.max(...data.map((d) => d.value), 100000);
-  const roundedMax = Math.ceil(maxValue / 100000) * 100000;
+  const maxRevenue = 2000000; // fixed 20 lakh max
   const chartHeight = 410;
+ const yAxisLabels = [20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0];
 
   return (
     <div className="h-full rounded-xl border border-slate-800/80 bg-[#0b111a] p-4 shadow-[0_0_20px_rgba(0,0,0,0.25)]">
@@ -356,20 +338,20 @@ function RevenueChart({
       </div>
 
       {chartType === "bar" ? (
-        <div className="relative h-[500px] pl-12 pr-2 pt-4">
-          {[6, 5, 4, 3, 2, 1, 0].map((n) => (
+        <div className="relative h-[500px] pl-14 pr-2 pt-4">
+          {yAxisLabels.map((label) => (
             <div
-              key={n}
-              className="absolute left-12 right-2 border-t border-slate-800/70"
-              style={{ top: `${24 + ((6 - n) / 6) * chartHeight}px` }}
+              key={label}
+              className="absolute left-14 right-2 border-t border-slate-800/70"
+              style={{ top: `${24 + ((20 - label) / 20) * chartHeight}px` }}
             >
-              <span className="absolute -left-11 -top-2 text-[11px] text-slate-400">
-                {n === 0 ? "₹0" : `₹${Math.round((roundedMax / 100000) * (n / 6))}L`}
+              <span className="absolute -left-12 -top-2 text-[11px] text-slate-400">
+                ₹{label}L
               </span>
             </div>
           ))}
 
-          <div className="absolute bottom-5 left-12 right-2 top-6 z-10 flex items-end justify-between gap-3">
+          <div className="absolute bottom-5 left-14 right-2 top-6 z-10 flex items-end justify-between gap-3">
             {data.map((item) => (
               <div key={item.month} className="relative flex h-full flex-1 flex-col items-center justify-end gap-2">
                 <div
@@ -378,7 +360,9 @@ function RevenueChart({
                       ? "bg-gradient-to-t from-blue-600 to-violet-400"
                       : "bg-gradient-to-t from-blue-950 to-cyan-500"
                   }`}
-                  style={{ height: `${Math.max((item.value / roundedMax) * chartHeight, item.value > 0 ? 8 : 0)}px` }}
+                  style={{
+                    height: `${Math.max((item.value / maxRevenue) * chartHeight, item.value > 0 ? 8 : 0)}px`,
+                  }}
                 />
                 <p className="text-[11px] text-slate-400">{item.month}</p>
               </div>

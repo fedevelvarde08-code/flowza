@@ -1,5 +1,5 @@
 "use client";
-
+import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 export default function LoginPage() {
   const router = useRouter();
   const supabase = createClient();
-
+const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -27,7 +27,22 @@ export default function LoginPage() {
     router.push("/dashboard");
     router.refresh();
   }
+async function handleForgotPassword() {
+  if (!email) {
+    alert("Please enter your email first")
+    return
+  }
 
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: "http://localhost:3000/reset-password",
+  })
+
+  if (error) {
+    alert(error.message)
+  } else {
+    alert("Password reset email sent")
+  }
+}
   return (
     <div style={{
       height: "100vh",
@@ -59,14 +74,59 @@ export default function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
             style={inputStyle}
           />
+<div style={{ position: "relative", marginTop: "15px" }}>
+  <input
+    type={showPassword ? "text" : "password"}
+    placeholder="Password"
+    value={password}
+    onChange={(e) => setPassword(e.target.value)}
+    style={{
+      ...inputStyle,
+      paddingRight: "45px",
+    }}
+  />
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={inputStyle}
-          />
+  <button
+    type="button"
+    onClick={() => setShowPassword(!showPassword)}
+    style={{
+      position: "absolute",
+      right: "12px",
+      top: "50%",
+      transform: "translateY(-50%)",
+      background: "transparent",
+      border: "none",
+      cursor: "pointer",
+      color: "#94a3b8",
+    }}
+  >
+    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+  </button>
+</div>
+
+<div
+  style={{
+    display: "flex",
+    justifyContent: "flex-end",
+    marginTop: "10px",
+    marginBottom: "15px",
+  }}
+>
+  <button
+    type="button"
+    onClick={handleForgotPassword}
+    style={{
+      background: "transparent",
+      border: "none",
+      color: "#a78bfa",
+      cursor: "pointer",
+      fontSize: "14px",
+    }}
+  >
+    Forgot Password?
+  </button>
+</div>
+         
 
           <button style={btnStyle}>Login</button>
         </form>

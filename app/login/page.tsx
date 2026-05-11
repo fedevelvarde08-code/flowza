@@ -34,7 +34,7 @@ async function handleForgotPassword() {
   }
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: "http://localhost:3000/reset-password",
+    redirectTo: "https://flowza-ten.vercel.app/reset-password",
   })
 
   if (error) {

@@ -32,7 +32,7 @@ export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   // Public pages
-  const publicRoutes = ["/", "/login", "/signup"];
+  const publicRoutes = ["/", "/login", "/signup","/reset-password"];
   const isPublicRoute = publicRoutes.includes(path);
 
   // If not logged in and trying to access private page

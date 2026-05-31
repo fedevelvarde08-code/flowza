@@ -1,6 +1,7 @@
 'use client'
 
 // app/followups/page.tsx
+
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getBusinessId } from '@/lib/getBusinessId'
@@ -15,7 +16,7 @@ import { MessageCircle, UserPlus, Users } from 'lucide-react'
 
 export default function FollowupsPage() {
   const [followupLeads, setFollowupLeads] = useState<Lead[]>([])
-  const [pendingCustomers, setPendingCustomers] = useState<Customer[]>([])
+  const [pendingMembers, setPendingMembers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(true)
   const [businessName, setBusinessName] = useState('Flowza')
 
@@ -33,22 +34,24 @@ export default function FollowupsPage() {
         setBusinessName(businessData.business_name)
       }
 
-      const [leadsRes, customersRes] = await Promise.all([
+      const [leadsRes, membersRes] = await Promise.all([
         supabase
           .from('leads')
           .select('*')
+          .eq('business_id', bizId)
           .eq('status', 'Follow-up')
           .order('updated_at', { ascending: false }),
 
         supabase
           .from('customers')
           .select('*')
+          .eq('business_id', bizId)
           .in('payment_status', ['Due', 'Partial'])
           .order('pending_amount', { ascending: false }),
       ])
 
       setFollowupLeads(leadsRes.data ?? [])
-      setPendingCustomers(customersRes.data ?? [])
+      setPendingMembers(membersRes.data ?? [])
       setLoading(false)
     }
 
@@ -61,17 +64,19 @@ export default function FollowupsPage() {
         <div>
           <h1 className="page-title">Follow-ups</h1>
           <p className="page-subtitle">
-            {followupLeads.length} leads · {pendingCustomers.length} pending payments
+            {followupLeads.length} leads · {pendingMembers.length} members with pending payments
           </p>
         </div>
       </div>
 
       {/* Leads */}
       <div className="mb-8">
-        <div className="flex items-center gap-2 mb-4">
+        <div className="mb-4 flex items-center gap-2">
           <UserPlus size={16} className="text-amber-400" />
-          <h2 className="text-sm font-semibold text-white">Leads — Follow-up Required</h2>
-          <span className="text-xs bg-amber-500/15 text-amber-400 border border-amber-500/20 rounded-full px-2 py-0.5">
+          <h2 className="text-sm font-semibold text-white">
+            Leads — Follow-up Required
+          </h2>
+          <span className="rounded-full border border-amber-500/20 bg-amber-500/15 px-2 py-0.5 text-xs text-amber-400">
             {followupLeads.length}
           </span>
         </div>
@@ -84,7 +89,7 @@ export default function FollowupsPage() {
                 <th className="table-th hidden md:table-cell">Service</th>
                 <th className="table-th hidden md:table-cell">Source</th>
                 <th className="table-th">Status</th>
-                <th className="table-th text-right">WhatsApp</th>
+                <th className="table-th w-[160px] text-center">WhatsApp</th>
               </tr>
             </thead>
 
@@ -94,14 +99,14 @@ export default function FollowupsPage() {
                   <tr key={i} className="border-t border-white/5">
                     {Array.from({ length: 5 }).map((_, j) => (
                       <td key={j} className="table-td">
-                        <div className="h-4 bg-white/5 rounded animate-pulse" />
+                        <div className="h-4 animate-pulse rounded bg-white/5" />
                       </td>
                     ))}
                   </tr>
                 ))
               ) : followupLeads.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="table-td text-center py-10 text-slate-600">
+                  <td colSpan={5} className="table-td py-10 text-center text-slate-600">
                     No leads pending follow-up 🎉
                   </td>
                 </tr>
@@ -109,7 +114,7 @@ export default function FollowupsPage() {
                 followupLeads.map((lead) => {
                   const msg = buildLeadWhatsAppMessage(
                     lead.name,
-                    lead.service_interested ?? 'our service',
+                    lead.service_interested ?? 'our membership plan',
                     businessName
                   )
 
@@ -120,11 +125,11 @@ export default function FollowupsPage() {
                         <p className="text-xs text-slate-500">{lead.phone}</p>
                       </td>
 
-                      <td className="table-td hidden md:table-cell text-slate-400">
+                      <td className="table-td hidden text-slate-400 md:table-cell">
                         {lead.service_interested || '—'}
                       </td>
 
-                      <td className="table-td hidden md:table-cell text-slate-400">
+                      <td className="table-td hidden text-slate-400 md:table-cell">
                         {lead.source || '—'}
                       </td>
 
@@ -132,15 +137,16 @@ export default function FollowupsPage() {
                         <Badge status={lead.status} />
                       </td>
 
-                      <td className="table-td">
-                        <div className="flex justify-end">
+                      <td className="table-td w-[160px] text-center">
+                        <div className="flex justify-center">
                           <a
                             href={buildWhatsAppLink(lead.phone, msg)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 text-xs font-medium rounded-lg border border-emerald-500/20 transition-colors"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-600/20 px-3 py-1.5 text-xs font-medium text-emerald-400 transition-colors hover:bg-emerald-600/30"
                           >
-                            <MessageCircle size={13} /> WhatsApp
+                            <MessageCircle size={13} />
+                            WhatsApp
                           </a>
                         </div>
                       </td>
@@ -153,13 +159,15 @@ export default function FollowupsPage() {
         </div>
       </div>
 
-      {/* Customers */}
+      {/* Members */}
       <div>
-        <div className="flex items-center gap-2 mb-4">
+        <div className="mb-4 flex items-center gap-2">
           <Users size={16} className="text-rose-400" />
-          <h2 className="text-sm font-semibold text-white">Customers — Pending Payments</h2>
-          <span className="text-xs bg-rose-500/15 text-rose-400 border border-rose-500/20 rounded-full px-2 py-0.5">
-            {pendingCustomers.length}
+          <h2 className="text-sm font-semibold text-white">
+            Members — Pending Payments
+          </h2>
+          <span className="rounded-full border border-rose-500/20 bg-rose-500/15 px-2 py-0.5 text-xs text-rose-400">
+            {pendingMembers.length}
           </span>
         </div>
 
@@ -168,10 +176,10 @@ export default function FollowupsPage() {
             <thead>
               <tr className="border-b border-white/5">
                 <th className="table-th">Name</th>
-                <th className="table-th hidden md:table-cell">Service</th>
+                <th className="table-th hidden md:table-cell">Membership Type</th>
                 <th className="table-th">Pending</th>
                 <th className="table-th">Status</th>
-                <th className="table-th text-right">WhatsApp</th>
+                <th className="table-th w-[160px] text-center">WhatsApp</th>
               </tr>
             </thead>
 
@@ -181,50 +189,51 @@ export default function FollowupsPage() {
                   <tr key={i} className="border-t border-white/5">
                     {Array.from({ length: 5 }).map((_, j) => (
                       <td key={j} className="table-td">
-                        <div className="h-4 bg-white/5 rounded animate-pulse" />
+                        <div className="h-4 animate-pulse rounded bg-white/5" />
                       </td>
                     ))}
                   </tr>
                 ))
-              ) : pendingCustomers.length === 0 ? (
+              ) : pendingMembers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="table-td text-center py-10 text-slate-600">
-                    All payments are cleared 🎉
+                  <td colSpan={5} className="table-td py-10 text-center text-slate-600">
+                    All member payments are cleared 🎉
                   </td>
                 </tr>
               ) : (
-                pendingCustomers.map((c) => {
-                  const pending = Number(c.pending_amount)
-                  const msg = buildPaymentWhatsAppMessage(c.name, pending)
+                pendingMembers.map((member) => {
+                  const pending = Number(member.pending_amount || 0)
+                  const msg = buildPaymentWhatsAppMessage(member.name, pending)
 
                   return (
-                    <tr key={c.id} className="table-row">
+                    <tr key={member.id} className="table-row">
                       <td className="table-td">
-                        <p className="font-medium text-white">{c.name}</p>
-                        <p className="text-xs text-slate-500">{c.phone}</p>
+                        <p className="font-medium text-white">{member.name}</p>
+                        <p className="text-xs text-slate-500">{member.phone}</p>
                       </td>
 
-                      <td className="table-td hidden md:table-cell text-slate-400">
-                        {c.service_taken || '—'}
+                      <td className="table-td hidden text-slate-400 md:table-cell">
+                        {member.service_taken || '—'}
                       </td>
 
-                      <td className="table-td text-rose-400 font-semibold">
+                      <td className="table-td font-semibold text-rose-400">
                         ₹{pending.toLocaleString('en-IN')}
                       </td>
 
                       <td className="table-td">
-                        <Badge status={c.payment_status} />
+                        <Badge status={member.payment_status} />
                       </td>
 
-                      <td className="table-td">
-                        <div className="flex justify-end">
+                      <td className="table-td w-[160px] text-center">
+                        <div className="flex justify-center">
                           <a
-                            href={buildWhatsAppLink(c.phone, msg)}
+                            href={buildWhatsAppLink(member.phone, msg)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 text-xs font-medium rounded-lg border border-emerald-500/20 transition-colors"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-600/20 px-3 py-1.5 text-xs font-medium text-emerald-400 transition-colors hover:bg-emerald-600/30"
                           >
-                            <MessageCircle size={13} /> WhatsApp
+                            <MessageCircle size={13} />
+                            WhatsApp
                           </a>
                         </div>
                       </td>

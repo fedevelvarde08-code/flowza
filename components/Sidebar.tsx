@@ -17,9 +17,9 @@ const navItems = [
     { href: '/dashboard/overview', label: 'Overview', icon: LayoutDashboard },  
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/leads', label: 'Leads', icon: UserPlus },
-  { href: '/customers', label: 'Customers', icon: Users },
+  { href: '/customers', label: 'Members', icon: Users },
   { href: '/branches', label: 'Branches', icon: Users },
-  { href: '/batches', label: 'Batches', icon: UserPlus },
+  { href: '/batches', label: 'Plans', icon: UserPlus },
   { href: '/followups', label: 'Follow-ups', icon: Bell },
   { href: '/settings', label: 'Settings', icon: Settings },
 ]

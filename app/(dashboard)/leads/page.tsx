@@ -343,7 +343,7 @@ async function handleConvert(lead: Lead) {
               <th className="table-th hidden md:table-cell">Service</th>
               <th className="table-th hidden lg:table-cell">Source</th>
               <th className="table-th">Status</th>
-              <th className="table-th text-right">Actions</th>
+             <th className="table-th w-[140px] text-center">Actions</th>
             </tr>
           </thead>
 
@@ -400,8 +400,8 @@ async function handleConvert(lead: Lead) {
                     <Badge status={lead.status} />
                   </td>
 
-                  <td className="table-td">
-                    <div className="flex items-center justify-end gap-1">
+                 <td className="table-td w-[140px] text-center">
+  <div className="flex items-center justify-center gap-2">
                       {lead.status !== 'Converted' && (
                         <button
                           onClick={() => setConvertId(lead.id)}

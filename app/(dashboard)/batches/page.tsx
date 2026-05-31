@@ -6,12 +6,16 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getBusinessId, BusinessIdException } from '@/lib/getBusinessId'
 import {
-  Plus, Pencil, Trash2, X,
-  AlertCircle, Calendar, IndianRupee,
+  Plus,
+  Pencil,
+  Trash2,
+  X,
+  AlertCircle,
+  Calendar,
+  IndianRupee,
   Users,
+  Clock,
 } from 'lucide-react'
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Branch {
   id: string
@@ -25,6 +29,7 @@ interface Batch {
   name: string
   course: string | null
   default_fee: number
+  duration_months: number
   created_at: string
   branch?: Branch
 }
@@ -34,6 +39,7 @@ interface FormState {
   name: string
   course: string
   default_fee: string
+  duration_months: string
 }
 
 const EMPTY_FORM: FormState = {
@@ -41,33 +47,32 @@ const EMPTY_FORM: FormState = {
   name: '',
   course: '',
   default_fee: '0',
+  duration_months: '1',
 }
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-IN', {
-    day: '2-digit', month: 'short', year: 'numeric',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
   })
 }
 
-function formatINR(n: number) {
-  return '₹' + Number(n).toLocaleString('en-IN')
-}
-
-// ─── Inline UI primitives ─────────────────────────────────────────────────────
-
 function Label({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
-    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-400">
       {children}
-      {required && <span className="text-rose-500 ml-0.5">*</span>}
+      {required && <span className="ml-0.5 text-rose-500">*</span>}
     </label>
   )
 }
 
 function TextInput({
-  value, onChange, placeholder, disabled, type = 'text',
+  value,
+  onChange,
+  placeholder,
+  disabled,
+  type = 'text',
 }: {
   value: string
   onChange: (v: string) => void
@@ -82,15 +87,18 @@ function TextInput({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       disabled={disabled}
-      className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white text-sm
-                 placeholder:text-slate-600 focus:outline-none focus:border-violet-500/60
-                 focus:bg-white/[0.07] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white
+                 placeholder:text-slate-600 transition-colors focus:border-violet-500/60
+                 focus:bg-white/[0.07] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
     />
   )
 }
 
 function SelectInput({
-  value, onChange, disabled, children,
+  value,
+  onChange,
+  disabled,
+  children,
 }: {
   value: string
   onChange: (v: string) => void
@@ -102,9 +110,8 @@ function SelectInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
-      className="w-full px-3 py-2.5 rounded-lg bg-[#0f1117] border border-white/10 text-white text-sm
-                 focus:outline-none focus:border-violet-500/60 transition-colors
-                 disabled:opacity-50 disabled:cursor-not-allowed appearance-none"
+      className="w-full appearance-none rounded-lg border border-white/10 bg-[#0f1117] px-3 py-2.5 text-sm text-white
+                 transition-colors focus:border-violet-500/60 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
     >
       {children}
     </select>
@@ -113,7 +120,7 @@ function SelectInput({
 
 function Spinner() {
   return (
-    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
     </svg>
@@ -121,7 +128,10 @@ function Spinner() {
 }
 
 function PrimaryBtn({
-  onClick, disabled, loading, children,
+  onClick,
+  disabled,
+  loading,
+  children,
 }: {
   onClick?: () => void
   disabled?: boolean
@@ -132,10 +142,9 @@ function PrimaryBtn({
     <button
       onClick={onClick}
       disabled={disabled || loading}
-      className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold
-                 bg-violet-600 hover:bg-violet-500 text-white transition-colors
-                 shadow-[0_0_16px_rgba(124,58,237,0.3)] hover:shadow-[0_0_24px_rgba(124,58,237,0.45)]
-                 disabled:opacity-50 disabled:cursor-not-allowed"
+      className="inline-flex items-center justify-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold
+                 text-white shadow-[0_0_16px_rgba(124,58,237,0.3)] transition-colors hover:bg-violet-500
+                 hover:shadow-[0_0_24px_rgba(124,58,237,0.45)] disabled:cursor-not-allowed disabled:opacity-50"
     >
       {loading && <Spinner />}
       {children}
@@ -144,7 +153,8 @@ function PrimaryBtn({
 }
 
 function SecondaryBtn({
-  onClick, children,
+  onClick,
+  children,
 }: {
   onClick?: () => void
   children: React.ReactNode
@@ -152,26 +162,28 @@ function SecondaryBtn({
   return (
     <button
       onClick={onClick}
-      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
-                 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300
-                 hover:text-white transition-colors"
+      className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium
+                 text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
     >
       {children}
     </button>
   )
 }
 
-// ─── Modal shell ──────────────────────────────────────────────────────────────
-
 function Modal({
-  title, onClose, children,
+  title,
+  onClose,
+  children,
 }: {
   title: string
   onClose: () => void
   children: React.ReactNode
 }) {
   useEffect(() => {
-    const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    const fn = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+
     document.addEventListener('keydown', fn)
     return () => document.removeEventListener('keydown', fn)
   }, [onClose])
@@ -179,23 +191,24 @@ function Modal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-[#13151e] border border-white/10 rounded-2xl shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
-          <h2 className="text-white font-semibold text-base">{title}</h2>
+
+      <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-[#13151e] shadow-2xl">
+        <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
+          <h2 className="text-base font-semibold text-white">{title}</h2>
+
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition-colors"
+            className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-white/10 hover:text-white"
           >
             <X size={16} />
           </button>
         </div>
+
         <div className="px-6 py-5">{children}</div>
       </div>
     </div>
   )
 }
-
-// ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function BatchesPage() {
   const businessIdRef = useRef<string | null>(null)
@@ -205,18 +218,43 @@ export default function BatchesPage() {
   const [loading, setLoading] = useState(true)
   const [bizError, setBizError] = useState<string | null>(null)
 
-  // Add / Edit
   const [modalOpen, setModalOpen] = useState(false)
   const [editingBatch, setEditingBatch] = useState<Batch | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
-  // Delete
   const [deletingBatch, setDeletingBatch] = useState<Batch | null>(null)
   const [deleting, setDeleting] = useState(false)
 
-  // ── 1. Resolve business_id once ───────────────────────────────────────────
+  const fetchAll = useCallback(async (bizId?: string) => {
+    const id = bizId ?? businessIdRef.current
+    if (!id) return
+
+    setLoading(true)
+
+    const [batchesRes, branchesRes] = await Promise.all([
+      supabase
+        .from('batches')
+        .select('*, branch:branches(id, name)')
+        .eq('business_id', id)
+        .order('created_at', { ascending: false }),
+
+      supabase
+        .from('branches')
+        .select('id, name')
+        .eq('business_id', id)
+        .order('name'),
+    ])
+
+    if (batchesRes.error) console.error('fetchPlans:', batchesRes.error.message)
+    if (branchesRes.error) console.error('fetchBranches:', branchesRes.error.message)
+
+    setBatches((batchesRes.data ?? []) as Batch[])
+    setBranches(branchesRes.data ?? [])
+    setLoading(false)
+  }, [])
+
   useEffect(() => {
     async function init() {
       try {
@@ -231,44 +269,14 @@ export default function BatchesPage() {
         setLoading(false)
       }
     }
+
     init()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [fetchAll])
 
-  // ── 2. Fetch batches + branches in parallel ───────────────────────────────
-  const fetchAll = useCallback(async (bizId?: string) => {
-    const id = bizId ?? businessIdRef.current
-    if (!id) return
-
-    setLoading(true)
-
-    const [batchesRes, branchesRes] = await Promise.all([
-      supabase
-        .from('batches')
-        .select('*, branch:branches(id, name)')
-        .eq('business_id', id)
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('branches')
-        .select('id, name')
-        .eq('business_id', id)
-        .order('name'),
-    ])
-
-    if (batchesRes.error) console.error('fetchBatches:', batchesRes.error.message)
-    if (branchesRes.error) console.error('fetchBranches:', branchesRes.error.message)
-
-    setBatches(batchesRes.data ?? [])
-    setBranches(branchesRes.data ?? [])
-    setLoading(false)
-  }, [])
-
-  // ── Modal helpers ─────────────────────────────────────────────────────────
   function openAdd() {
     setEditingBatch(null)
     setForm({
       ...EMPTY_FORM,
-      // Pre-select first branch if only one exists
       branch_id: branches.length === 1 ? branches[0].id : '',
     })
     setFormError(null)
@@ -282,6 +290,7 @@ export default function BatchesPage() {
       name: batch.name,
       course: batch.course ?? '',
       default_fee: String(batch.default_fee),
+      duration_months: String(batch.duration_months || 1),
     })
     setFormError(null)
     setModalOpen(true)
@@ -294,7 +303,6 @@ export default function BatchesPage() {
     setFormError(null)
   }
 
-  // ── 3. Save (insert or update) ────────────────────────────────────────────
   async function handleSave() {
     setFormError(null)
 
@@ -302,19 +310,28 @@ export default function BatchesPage() {
       setFormError('Please select a branch.')
       return
     }
+
     const trimmedName = form.name.trim()
+
     if (!trimmedName) {
-      setFormError('Batch name is required.')
+      setFormError('Plan name is required.')
       return
     }
 
     const bizId = businessIdRef.current
+
     if (!bizId) {
       setFormError('Business not loaded. Please refresh.')
       return
     }
 
     const fee = parseFloat(form.default_fee) || 0
+    const duration = parseInt(form.duration_months) || 1
+
+    if (duration <= 0) {
+      setFormError('Duration must be at least 1 month.')
+      return
+    }
 
     setSaving(true)
 
@@ -326,6 +343,7 @@ export default function BatchesPage() {
           name: trimmedName,
           course: form.course.trim() || null,
           default_fee: fee,
+          duration_months: duration,
         })
         .eq('id', editingBatch.id)
         .eq('business_id', bizId)
@@ -338,13 +356,16 @@ export default function BatchesPage() {
     } else {
       const { error } = await supabase
         .from('batches')
-        .insert([{
-          business_id: bizId,           // ← always attached
-          branch_id: form.branch_id,
-          name: trimmedName,
-          course: form.course.trim() || null,
-          default_fee: fee,
-        }])
+        .insert([
+          {
+            business_id: bizId,
+            branch_id: form.branch_id,
+            name: trimmedName,
+            course: form.course.trim() || null,
+            default_fee: fee,
+            duration_months: duration,
+          },
+        ])
 
       if (error) {
         setFormError(`Insert failed: ${error.message}`)
@@ -358,36 +379,35 @@ export default function BatchesPage() {
     fetchAll()
   }
 
-  // ── 4. Delete ─────────────────────────────────────────────────────────────
   async function handleDelete() {
     if (!deletingBatch) return
+
     const bizId = businessIdRef.current
     if (!bizId) return
 
     setDeleting(true)
+
     const { error } = await supabase
       .from('batches')
       .delete()
       .eq('id', deletingBatch.id)
       .eq('business_id', bizId)
 
-    if (error) console.error('delete batch:', error.message)
+    if (error) console.error('delete plan:', error.message)
 
     setDeleting(false)
     setDeletingBatch(null)
     fetchAll()
   }
 
-  // ─── Render ───────────────────────────────────────────────────────────────
-
   if (bizError) {
     return (
       <div className="p-8">
-        <div className="flex items-start gap-3 p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl max-w-lg">
-          <AlertCircle size={18} className="text-rose-400 mt-0.5 shrink-0" />
+        <div className="flex max-w-lg items-start gap-3 rounded-xl border border-rose-500/20 bg-rose-500/10 p-4">
+          <AlertCircle size={18} className="mt-0.5 shrink-0 text-rose-400" />
           <div>
-            <p className="text-rose-400 font-medium text-sm">Could not load business</p>
-            <p className="text-slate-400 text-xs mt-1">{bizError}</p>
+            <p className="text-sm font-medium text-rose-400">Could not load business</p>
+            <p className="mt-1 text-xs text-slate-400">{bizError}</p>
           </div>
         </div>
       </div>
@@ -396,90 +416,106 @@ export default function BatchesPage() {
 
   return (
     <div className="p-8">
-
-      {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between mb-8">
+      <div className="mb-8 flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white">Batches</h1>
-          <p className="text-slate-500 text-sm mt-0.5">
-            {loading ? '...' : `${batches.length} batch${batches.length !== 1 ? 'es' : ''}`}
+          <h1 className="text-xl font-bold text-white">Plans</h1>
+          <p className="mt-0.5 text-sm text-slate-500">
+            {loading ? '...' : `${batches.length} plan${batches.length !== 1 ? 's' : ''}`}
           </p>
         </div>
+
         <PrimaryBtn onClick={openAdd} disabled={!businessIdRef.current}>
           <Plus size={16} />
-          Add Batch
+          Add Plan
         </PrimaryBtn>
       </div>
 
-      {/* ── No branches warning ──────────────────────────────────────────────── */}
       {!loading && branches.length === 0 && (
-        <div className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl mb-6 max-w-lg">
-          <AlertCircle size={16} className="text-amber-400 mt-0.5 shrink-0" />
-          <p className="text-amber-400 text-sm">
-            You need to add at least one <span className="font-semibold">Branch</span> before creating batches.
+        <div className="mb-6 flex max-w-lg items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
+          <AlertCircle size={16} className="mt-0.5 shrink-0 text-amber-400" />
+          <p className="text-sm text-amber-400">
+            You need to add at least one <span className="font-semibold">Branch</span> before creating plans.
           </p>
         </div>
       )}
 
-      {/* ── Table ───────────────────────────────────────────────────────────── */}
-      <div className="bg-[#13151e] border border-white/5 rounded-2xl overflow-hidden">
+      <div className="overflow-hidden rounded-2xl border border-white/5 bg-[#13151e]">
         <table className="w-full">
           <thead>
             <tr className="border-b border-white/5">
-              <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-5 py-3.5">
-                Batch Name
+              <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Plan Name
               </th>
-              <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3.5 hidden sm:table-cell">
+              <th className="hidden px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 sm:table-cell">
                 Branch
               </th>
-              <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3.5 hidden md:table-cell">
-                Course
+              <th className="hidden px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 md:table-cell">
+                Plan Type
               </th>
-              <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3.5">
-                Default Fee
+              <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Plan Price
               </th>
-              <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3.5 hidden lg:table-cell">
+              <th className="hidden px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 lg:table-cell">
+                Duration
+              </th>
+              <th className="hidden px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 lg:table-cell">
                 Created
               </th>
-              <th className="text-right text-xs font-semibold text-slate-500 uppercase tracking-wider px-5 py-3.5">
+              <th className="px-5 py-3.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Actions
               </th>
             </tr>
           </thead>
+
           <tbody>
+            {loading &&
+              Array.from({ length: 4 }).map((_, i) => (
+                <tr key={i} className="border-t border-white/[0.04]">
+                  <td className="px-5 py-4">
+                    <div className="h-4 w-32 animate-pulse rounded bg-white/5" />
+                  </td>
+                  <td className="hidden px-4 py-4 sm:table-cell">
+                    <div className="h-4 w-24 animate-pulse rounded bg-white/5" />
+                  </td>
+                  <td className="hidden px-4 py-4 md:table-cell">
+                    <div className="h-4 w-28 animate-pulse rounded bg-white/5" />
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="h-4 w-16 animate-pulse rounded bg-white/5" />
+                  </td>
+                  <td className="hidden px-4 py-4 lg:table-cell">
+                    <div className="h-4 w-16 animate-pulse rounded bg-white/5" />
+                  </td>
+                  <td className="hidden px-4 py-4 lg:table-cell">
+                    <div className="h-4 w-20 animate-pulse rounded bg-white/5" />
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="ml-auto h-4 w-12 animate-pulse rounded bg-white/5" />
+                  </td>
+                </tr>
+              ))}
 
-            {/* Loading skeleton */}
-            {loading && Array.from({ length: 4 }).map((_, i) => (
-              <tr key={i} className="border-t border-white/[0.04]">
-                <td className="px-5 py-4"><div className="h-4 w-32 bg-white/5 rounded animate-pulse" /></td>
-                <td className="px-4 py-4 hidden sm:table-cell"><div className="h-4 w-24 bg-white/5 rounded animate-pulse" /></td>
-                <td className="px-4 py-4 hidden md:table-cell"><div className="h-4 w-28 bg-white/5 rounded animate-pulse" /></td>
-                <td className="px-4 py-4"><div className="h-4 w-16 bg-white/5 rounded animate-pulse" /></td>
-                <td className="px-4 py-4 hidden lg:table-cell"><div className="h-4 w-20 bg-white/5 rounded animate-pulse" /></td>
-                <td className="px-5 py-4"><div className="h-4 w-12 bg-white/5 rounded animate-pulse ml-auto" /></td>
-              </tr>
-            ))}
-
-            {/* Empty state */}
             {!loading && batches.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-5 py-16 text-center">
+                <td colSpan={7} className="px-5 py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/10">
                       <Users size={22} className="text-violet-400" />
                     </div>
+
                     <div>
-                      <p className="text-white font-medium text-sm">No batches yet</p>
-                      <p className="text-slate-600 text-xs mt-1">
+                      <p className="text-sm font-medium text-white">No plans yet</p>
+                      <p className="mt-1 text-xs text-slate-600">
                         {branches.length === 0
-                          ? 'Add a branch first, then create your first batch.'
-                          : 'Add your first batch to get started.'}
+                          ? 'Add a branch first, then create your first membership plan.'
+                          : 'Add your first membership plan to get started.'}
                       </p>
                     </div>
+
                     {branches.length > 0 && (
                       <PrimaryBtn onClick={openAdd}>
                         <Plus size={14} />
-                        Add Batch
+                        Add Plan
                       </PrimaryBtn>
                     )}
                   </div>
@@ -487,95 +523,89 @@ export default function BatchesPage() {
               </tr>
             )}
 
-            {/* Data rows */}
-            {!loading && batches.map((batch) => (
-              <tr
-                key={batch.id}
-                className="border-t border-white/[0.04] hover:bg-white/[0.02] transition-colors group"
-              >
-                {/* Batch name */}
-                <td className="px-5 py-4">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/15 flex items-center justify-center flex-shrink-0">
-                      <Users size={14} className="text-indigo-400" />
+            {!loading &&
+              batches.map((batch) => (
+                <tr
+                  key={batch.id}
+                  className="group border-t border-white/[0.04] transition-colors hover:bg-white/[0.02]"
+                >
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-indigo-500/15 bg-indigo-500/10">
+                        <Users size={14} className="text-indigo-400" />
+                      </div>
+                      <span className="text-sm font-medium text-white">{batch.name}</span>
                     </div>
-                    <span className="text-white font-medium text-sm">{batch.name}</span>
-                  </div>
-                </td>
+                  </td>
 
-                {/* Branch name */}
-                <td className="px-4 py-4 hidden sm:table-cell">
-                  {batch.branch?.name ? (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-md
-                                     bg-violet-500/10 text-violet-300 border border-violet-500/15">
-                      {batch.branch.name}
-                    </span>
-                  ) : (
-                    <span className="text-slate-600 text-sm">—</span>
-                  )}
-                </td>
+                  <td className="hidden px-4 py-4 sm:table-cell">
+                    {batch.branch?.name ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-md border border-violet-500/15 bg-violet-500/10 px-2 py-1 text-xs font-medium text-violet-300">
+                        {batch.branch.name}
+                      </span>
+                    ) : (
+                      <span className="text-sm text-slate-600">—</span>
+                    )}
+                  </td>
 
-                {/* Course */}
-                <td className="px-4 py-4 hidden md:table-cell">
-                  <span className="text-sm text-slate-400">
-                    {batch.course || '—'}
-                  </span>
-                </td>
+                  <td className="hidden px-4 py-4 md:table-cell">
+                    <span className="text-sm text-slate-400">{batch.course || '—'}</span>
+                  </td>
 
-                {/* Default fee */}
-                <td className="px-4 py-4">
-                  <div className="flex items-center gap-1 text-sm font-semibold text-emerald-400">
-                    <IndianRupee size={12} className="opacity-70" />
-                    {Number(batch.default_fee).toLocaleString('en-IN')}
-                  </div>
-                </td>
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-1 text-sm font-semibold text-emerald-400">
+                      <IndianRupee size={12} className="opacity-70" />
+                      {Number(batch.default_fee).toLocaleString('en-IN')}
+                    </div>
+                  </td>
 
-                {/* Created date */}
-                <td className="px-4 py-4 hidden lg:table-cell">
-                  <div className="flex items-center gap-1.5 text-slate-500 text-xs">
-                    <Calendar size={11} className="text-slate-600" />
-                    {formatDate(batch.created_at)}
-                  </div>
-                </td>
+                  <td className="hidden px-4 py-4 lg:table-cell">
+                    <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                      <Clock size={12} className="text-slate-600" />
+                      {batch.duration_months || 1} month{Number(batch.duration_months || 1) > 1 ? 's' : ''}
+                    </div>
+                  </td>
 
-                {/* Actions */}
-                <td className="px-5 py-4">
-                  <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => openEdit(batch)}
-                      title="Edit batch"
-                      className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/8 transition-colors"
-                    >
-                      <Pencil size={14} />
-                    </button>
-                    <button
-                      onClick={() => setDeletingBatch(batch)}
-                      title="Delete batch"
-                      className="p-1.5 rounded-lg text-slate-600 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  <td className="hidden px-4 py-4 lg:table-cell">
+                    <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                      <Calendar size={11} className="text-slate-600" />
+                      {formatDate(batch.created_at)}
+                    </div>
+                  </td>
+
+                  <td className="px-5 py-4">
+                    <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                      <button
+                        onClick={() => openEdit(batch)}
+                        title="Edit plan"
+                        className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-white/8 hover:text-white"
+                      >
+                        <Pencil size={14} />
+                      </button>
+
+                      <button
+                        onClick={() => setDeletingBatch(batch)}
+                        title="Delete plan"
+                        className="rounded-lg p-1.5 text-slate-600 transition-colors hover:bg-rose-500/10 hover:text-rose-400"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </table>
       </div>
 
-      {/* ── Add / Edit Modal ─────────────────────────────────────────────────── */}
       {modalOpen && (
-        <Modal
-          title={editingBatch ? 'Edit Batch' : 'Add New Batch'}
-          onClose={closeModal}
-        >
+        <Modal title={editingBatch ? 'Edit Plan' : 'Add New Plan'} onClose={closeModal}>
           <div className="space-y-4">
-
-            {/* Branch dropdown */}
             <div>
               <Label required>Branch</Label>
+
               {branches.length === 0 ? (
-                <p className="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+                <p className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
                   No branches found. Please add a branch first.
                 </p>
               ) : (
@@ -584,7 +614,9 @@ export default function BatchesPage() {
                   onChange={(v) => setForm({ ...form, branch_id: v })}
                   disabled={saving}
                 >
-                  <option value="" className="bg-[#0f1117]">Select a branch...</option>
+                  <option value="" className="bg-[#0f1117]">
+                    Select a branch...
+                  </option>
                   {branches.map((b) => (
                     <option key={b.id} value={b.id} className="bg-[#0f1117]">
                       {b.name}
@@ -594,31 +626,28 @@ export default function BatchesPage() {
               )}
             </div>
 
-            {/* Batch name */}
             <div>
-              <Label required>Batch Name</Label>
+              <Label required>Plan Name</Label>
               <TextInput
                 value={form.name}
                 onChange={(v) => setForm({ ...form, name: v })}
-                placeholder="e.g. JEE Morning Batch, Batch A 2025"
+                placeholder="e.g. Monthly Membership, Gold Plan, PT Plan"
                 disabled={saving}
               />
             </div>
 
-            {/* Course */}
             <div>
-              <Label>Course (optional)</Label>
+              <Label>Plan Type (optional)</Label>
               <TextInput
                 value={form.course}
                 onChange={(v) => setForm({ ...form, course: v })}
-                placeholder="e.g. JEE Foundation, NEET, 11th Science"
+                placeholder="e.g. Gym Membership, Personal Training, CrossFit"
                 disabled={saving}
               />
             </div>
 
-            {/* Default fee */}
             <div>
-              <Label>Default Fee (₹)</Label>
+              <Label>Plan Price (₹)</Label>
               <TextInput
                 type="number"
                 value={form.default_fee}
@@ -626,51 +655,61 @@ export default function BatchesPage() {
                 placeholder="0"
                 disabled={saving}
               />
-              <p className="text-xs text-slate-600 mt-1">
-                This will be pre-filled when adding students to this batch.
+              <p className="mt-1 text-xs text-slate-600">
+                This price will be used when assigning members to this plan.
               </p>
             </div>
 
-            {/* Form error */}
+            <div>
+              <Label>Duration (Months)</Label>
+              <TextInput
+                type="number"
+                value={form.duration_months}
+                onChange={(v) => setForm({ ...form, duration_months: v })}
+                placeholder="1"
+                disabled={saving}
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                1 = Monthly, 3 = Quarterly, 6 = Half-Yearly, 12 = Yearly.
+              </p>
+            </div>
+
             {formError && (
-              <div className="flex items-center gap-2 p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg">
-                <AlertCircle size={14} className="text-rose-400 flex-shrink-0" />
-                <p className="text-rose-400 text-xs">{formError}</p>
+              <div className="flex items-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/10 p-3">
+                <AlertCircle size={14} className="flex-shrink-0 text-rose-400" />
+                <p className="text-xs text-rose-400">{formError}</p>
               </div>
             )}
           </div>
 
-          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-white/5">
+          <div className="mt-6 flex justify-end gap-3 border-t border-white/5 pt-4">
             <SecondaryBtn onClick={closeModal}>Cancel</SecondaryBtn>
-            <PrimaryBtn
-              onClick={handleSave}
-              loading={saving}
-              disabled={branches.length === 0}
-            >
-              {editingBatch ? 'Save Changes' : 'Add Batch'}
+            <PrimaryBtn onClick={handleSave} loading={saving} disabled={branches.length === 0}>
+              {editingBatch ? 'Save Changes' : 'Add Plan'}
             </PrimaryBtn>
           </div>
         </Modal>
       )}
 
-      {/* ── Delete Confirm Modal ─────────────────────────────────────────────── */}
       {deletingBatch && (
-        <Modal title="Delete Batch" onClose={() => setDeletingBatch(null)}>
-          <p className="text-slate-400 text-sm mb-1">
+        <Modal title="Delete Plan" onClose={() => setDeletingBatch(null)}>
+          <p className="mb-1 text-sm text-slate-400">
             Are you sure you want to delete{' '}
-            <span className="text-white font-semibold">{deletingBatch.name}</span>?
+            <span className="font-semibold text-white">{deletingBatch.name}</span>?
           </p>
-          <p className="text-slate-600 text-xs mb-6">
-            This batch will be removed. Students assigned to it will have their batch cleared. This cannot be undone.
+
+          <p className="mb-6 text-xs text-slate-600">
+            This plan will be removed. Members assigned to it may need to be reassigned. This cannot be undone.
           </p>
+
           <div className="flex justify-end gap-3">
             <SecondaryBtn onClick={() => setDeletingBatch(null)}>Cancel</SecondaryBtn>
+
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold
-                         bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/25 text-rose-400
-                         transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 rounded-lg border border-rose-500/25 bg-rose-600/20 px-4 py-2
+                         text-sm font-semibold text-rose-400 transition-colors hover:bg-rose-600/30 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {deleting ? <Spinner /> : <Trash2 size={14} />}
               Delete

@@ -180,7 +180,7 @@ export default function OverviewPage() {
       ["Total Collected", stats.totalCollected],
       ["Total Pending", stats.totalPending],
       ["Collection Rate", `${stats.collectionRate.toFixed(1)}%`],
-      ["Total Customers", filteredCustomers.length],
+      ["Total Members", filteredCustomers.length],
       ["Total Leads", filteredLeads.length],
       ["Converted Leads", stats.convertedLeads],
     ];
@@ -213,7 +213,7 @@ export default function OverviewPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Overview</h1>
           <p className="mt-1 text-sm text-slate-400">
-            Track your business performance and revenue insights
+            Track your gym performance and revenue insights
           </p>
         </div>
 
@@ -271,18 +271,18 @@ export default function OverviewPage() {
         />
 
         <div className="flex h-full flex-col gap-4">
-          <PaymentBreakdown stats={stats} customersCount={filteredCustomers.length} />
+          <PaymentBreakdown stats={stats} membersCount={filteredCustomers.length} />
           <LeadFunnel stats={stats} totalLeads={filteredLeads.length} />
         </div>
       </section>
 
       <section className="mt-4 grid grid-cols-2 gap-4">
-        <TableCard title="Top Pending Customers" type="pending" data={topPending} />
+        <TableCard title="Top Pending Members" type="pending" data={topPending} />
         <TableCard title="Recent Payments" type="payments" data={recentPayments} />
       </section>
 
       <p className="mt-4 flex items-center gap-2 text-[11px] text-slate-500">
-        <Info size={13} /> Data is fetched from Supabase customers and leads tables.
+        <Info size={13} /> Data is fetched from Supabase members and leads data.
       </p>
     </main>
   );
@@ -299,9 +299,9 @@ function RevenueChart({
   setChartType: (type: "bar" | "table") => void;
   onDownload: () => void;
 }) {
-  const maxRevenue = 2000000; // fixed 20 lakh max
+  const maxRevenue = 2000000;
   const chartHeight = 410;
- const yAxisLabels = [20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0];
+  const yAxisLabels = [20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0];
 
   return (
     <div className="h-full rounded-xl border border-slate-800/80 bg-[#0b111a] p-4 shadow-[0_0_20px_rgba(0,0,0,0.25)]">
@@ -393,7 +393,7 @@ function RevenueChart({
   );
 }
 
-function PaymentBreakdown({ stats, customersCount }: { stats: any; customersCount: number }) {
+function PaymentBreakdown({ stats, membersCount }: { stats: any; membersCount: number }) {
   return (
     <div className="flex-1 rounded-xl border border-slate-800/80 bg-[#0b111a] p-4 shadow-[0_0_20px_rgba(0,0,0,0.25)]">
       <h2 className="mb-5 text-lg font-semibold">Payment Status Breakdown</h2>
@@ -402,8 +402,8 @@ function PaymentBreakdown({ stats, customersCount }: { stats: any; customersCoun
         <div className="relative h-32 w-32 rounded-full bg-[conic-gradient(#22c55e_0_48%,#eab308_48%_72%,#ef4444_72%_100%)]">
           <div className="absolute inset-4 flex flex-col items-center justify-center rounded-full bg-[#0b111a]">
             <span className="text-[11px] text-slate-400">Total</span>
-            <span className="text-xl font-bold">{customersCount}</span>
-            <span className="text-[11px] text-slate-400">Customers</span>
+            <span className="text-xl font-bold">{membersCount}</span>
+            <span className="text-[11px] text-slate-400">Members</span>
           </div>
         </div>
 
@@ -511,8 +511,8 @@ function TableCard({ title, type, data }: { title: string; type: "pending" | "pa
       <table className="w-full text-left text-xs">
         <thead className="uppercase text-slate-500">
           <tr>
-            <th className="pb-3">Customer</th>
-            <th className="pb-3">Service</th>
+            <th className="pb-3">Member</th>
+            <th className="pb-3">Membership Type</th>
             <th className="pb-3">{type === "pending" ? "Total Amount" : "Amount Paid"}</th>
             <th className="pb-3">{type === "pending" ? "Pending" : "Status"}</th>
           </tr>
@@ -531,7 +531,7 @@ function TableCard({ title, type, data }: { title: string; type: "pending" | "pa
                 <td className="py-2.5">
                   <div className="flex items-center gap-2">
                     <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-700 text-[10px]">
-                      {customer.name?.[0] || "C"}
+                      {customer.name?.[0] || "M"}
                     </div>
                     {customer.name}
                   </div>

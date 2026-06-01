@@ -131,16 +131,6 @@ function PricingCard() {
   )
 }
 
-function MiniStat({ label, value, change }: { label: string; value: string; change: string }) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-[#10131d] p-4">
-      <p className="text-xs text-slate-500">{label}</p>
-      <p className="mt-2 text-2xl font-bold text-white">{value}</p>
-      <p className="mt-1 text-xs text-emerald-400">{change}</p>
-    </div>
-  )
-}
-
 export default function Page() {
   return (
     <main className="min-h-screen bg-[#05060c] text-white">
@@ -160,17 +150,14 @@ export default function Page() {
           <Button href="/login" variant="dark">
             Login
           </Button>
-          <a
-            href="https://wa.me/918956885390"
-            target="_blank"
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-600/25 transition hover:bg-violet-500"
-          >
-            Book Demo
-          </a>
+
+          <Button href="/signup" variant="primary">
+            Sign Up
+          </Button>
         </div>
       </nav>
 
-      <section className="grid gap-12 px-6 py-12 lg:grid-cols-2 lg:px-10 lg:py-20">
+     <section className="grid items-center gap-12 px-6 py-12 lg:grid-cols-2 lg:px-10 lg:py-12">
         <div className="flex flex-col justify-center">
           <div className="mb-6 w-fit rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-2 text-sm text-violet-300">
             ⚡ Automated Gym Membership & Follow-up System
@@ -189,13 +176,9 @@ export default function Page() {
           </p>
 
           <div className="mt-8 flex flex-wrap gap-4">
-            <a
-              href="https://wa.me/918956885390"
-              target="_blank"
-              className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white hover:bg-violet-500"
-            >
-              Book Demo on WhatsApp <ArrowRight size={16} />
-            </a>
+            <Button href="/signup" variant="primary">
+              Get Started
+            </Button>
 
             <Button href="/login" variant="secondary">
               Login
@@ -209,16 +192,16 @@ export default function Page() {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-violet-500/30 bg-[#080a12] p-3 shadow-2xl shadow-violet-600/20">
-          <Image
-            src="/dashboard-preview.png"
-            alt="Flowza Gym Dashboard"
-            width={1400}
-            height={900}
-            className="rounded-2xl border border-white/10"
-            priority
-          />
-        </div>
+       <div className="mx-auto w-fit rounded-3xl border border-violet-500/30 bg-[#080a12] p-3 shadow-2xl shadow-violet-600/20">
+  <Image
+    src="/dashboard-preview.png"
+    alt="Flowza Gym Dashboard"
+    width={1400}
+    height={900}
+    className="h-auto w-full rounded-2xl border border-white/10"
+    priority
+  />
+</div>
       </section>
 
       <section id="features" className="grid gap-0 border-y border-white/10 lg:grid-cols-2">

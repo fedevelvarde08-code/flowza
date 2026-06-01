@@ -54,6 +54,30 @@ function addMonths(dateString: string, months: number) {
 
   return date.toISOString().split('T')[0]
 }
+ function getMembershipRowClass(endDate?: string | null) {
+  if (!endDate) return ''
+
+  const today = new Date()
+  const expiry = new Date(endDate)
+
+  today.setHours(0, 0, 0, 0)
+  expiry.setHours(0, 0, 0, 0)
+
+  const diffDays = Math.ceil(
+    (expiry.getTime() - today.getTime()) /
+      (1000 * 60 * 60 * 24)
+  )
+
+  if (diffDays < 0) {
+    return 'bg-rose-500/10 hover:bg-rose-500/15'
+  }
+
+  if (diffDays <= 3) {
+    return 'bg-yellow-500/10 hover:bg-yellow-500/15'
+  }
+
+  return ''
+}
 function formatDate(date?: string | null) {
   if (!date) return '—'
   return new Date(date).toLocaleDateString('en-IN', {
@@ -84,6 +108,7 @@ export default function CustomersPage() {
   const [editingCustomer, setEditingCustomer] = useState<CustomerRow | null>(null)
   const [renewingMember, setRenewingMember] = useState<CustomerRow | null>(null)
 
+const [businessName, setBusinessName] = useState('Flowza')
   const [renewForm, setRenewForm] = useState({
   batch_id: '',
   membership_start_date: '',
@@ -110,7 +135,15 @@ export default function CustomersPage() {
   const fetchData = useCallback(async () => {
     const bizId = businessIdRef.current
     if (!bizId) return
+const { data: businessData } = await supabase
+  .from('businesses')
+  .select('business_name')
+  .eq('id', bizId)
+  .single()
 
+if (businessData?.business_name) {
+  setBusinessName(businessData.business_name)
+}
     setLoading(true)
 
     let customersQuery = supabase
@@ -244,6 +277,45 @@ export default function CustomersPage() {
   setRenewingMember(null)
   fetchData()
 }
+function sendRenewalReminder(member: CustomerRow) {
+  const gymName = businessName
+  const expiryDate = member.membership_end_date || 'your expiry date'
+
+  const today = new Date()
+  const expiry = new Date(expiryDate)
+
+  today.setHours(0, 0, 0, 0)
+  expiry.setHours(0, 0, 0, 0)
+
+  const isExpired = expiry.getTime() < today.getTime()
+
+  const msg = isExpired
+    ? `Hi ${member.name},
+
+Just a reminder that your membership at ${gymName} expired on ${expiryDate}.
+
+Would you like to renew your membership and continue your training without interruption?
+
+Reply to this message and we'll assist you with the renewal process.
+
+Thank you,
+${gymName}`
+    : `Hi ${member.name},
+
+Just a reminder that your membership at ${gymName} is set to expire on ${expiryDate}.
+
+Would you like to renew your membership and continue your training without interruption?
+
+Reply to this message and we'll assist you with the renewal process.
+
+Thank you,
+${gymName}`
+
+  window.open(
+    `https://wa.me/91${member.phone}?text=${encodeURIComponent(msg)}`,
+    '_blank'
+  )
+}
 async function handleSave() {
     if (!editingCustomer) return
 
@@ -334,7 +406,7 @@ async function handleSave() {
   if (bizError) {
     return (
       <div className="p-8">
-        <div className="flex items-start gap-3 p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl max-w-lg">
+        <div className="flex items-center justify-center gap-2">
           <AlertCircle size={18} className="text-rose-400 mt-0.5 shrink-0" />
           <div>
             <p className="text-rose-400 font-medium text-sm">Could not load business</p>
@@ -431,7 +503,7 @@ async function handleSave() {
               <th className="table-th">Paid</th>
               <th className="table-th">Pending</th>
               <th className="table-th">Status</th>
-              <th className="table-th">Actions</th>
+              <th className="table-th text-center">Actions</th>
             </tr>
           </thead>
 
@@ -457,7 +529,12 @@ async function handleSave() {
                 const pending = Math.max(Number(c.pending_amount ?? 0), 0)
 
                 return (
-                  <tr key={c.id} className="table-row">
+                 <tr
+  key={c.id}
+  className={`table-row ${getMembershipRowClass(
+    c.membership_end_date
+  )}`}
+>
                     <td className="table-td">
                       <p className="text-white font-medium">{c.name}</p>
                     </td>
@@ -468,23 +545,42 @@ async function handleSave() {
                     <td className="table-td text-emerald-400">{formatINR(c.amount_paid)}</td>
                     <td className="table-td text-rose-400">{formatINR(pending)}</td>
                     <td className="table-td"><Badge status={c.payment_status} /></td>
-                   <td className="table-td">
-  <div className="flex items-center justify-center gap-3"></div>
-                      <button type="button" onClick={() => openEdit(c)} className="p-1.5 text-slate-500 hover:text-white">
-                        <Pencil size={14} />
-                      </button>
-                      <button
-  type="button"
-  onClick={() => openRenew(c)}
-  className="rounded-lg px-2 py-1 text-xs font-medium text-violet-400 hover:bg-violet-500/10"
->
-  Renew
-</button>
-                      <button onClick={() => handleDeleteCustomer(c)} className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg">
-                        <Trash2 size={14} />
-                      </button>
-                    </td>
-                  </tr>
+                  <td className="table-td">
+  <div className="flex items-center justify-center gap-2">
+    <button
+      type="button"
+      onClick={() => openEdit(c)}
+      className="rounded-lg p-1.5 text-slate-500 hover:bg-white/5 hover:text-white"
+    >
+      <Pencil size={14} />
+    </button>
+
+    <button
+      type="button"
+      onClick={() => openRenew(c)}
+      className="rounded-lg border border-violet-500/20 px-2 py-1 text-xs font-medium text-violet-400 hover:bg-violet-500/10"
+    >
+      Renew
+    </button>
+
+    <button
+      type="button"
+      onClick={() => sendRenewalReminder(c)}
+      className="rounded-lg border border-emerald-500/20 px-2 py-1 text-xs font-medium text-emerald-400 hover:bg-emerald-500/10"
+    >
+      Reminder
+    </button>
+
+    <button
+      type="button"
+      onClick={() => handleDeleteCustomer(c)}
+      className="rounded-lg p-1.5 text-slate-500 hover:bg-rose-500/10 hover:text-rose-400"
+    >
+      <Trash2 size={14} />
+    </button>
+  </div>
+</td>
+                   </tr>
                 )
               })
             )}
@@ -492,6 +588,7 @@ async function handleSave() {
         </table>
       </div>
 
+  
       {showModal && (
         <Modal title="Edit Member" onClose={() => setShowModal(false)} size="lg">
           <div className="grid grid-cols-2 gap-4">
@@ -701,5 +798,6 @@ async function handleSave() {
   </Modal>
 )}
      </div>
-  )
+ 
+    )
 }
